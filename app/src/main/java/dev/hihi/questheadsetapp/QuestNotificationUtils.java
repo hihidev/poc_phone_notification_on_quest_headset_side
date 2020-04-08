@@ -12,7 +12,7 @@ import androidx.core.app.NotificationManagerCompat;
 
 public class QuestNotificationUtils {
 
-    private static void sendInternalNotification(Context paramContext, String paramString1, String paramString2, String paramString3, int paramInt1, int paramInt2, int paramInt3, PendingIntent paramPendingIntent1, PendingIntent paramPendingIntent2, boolean vrshell_aui_persist, String vrshell_aui_badge_route, boolean vrshell_aui_badge_auto_dismiss, boolean vrshell_aui_badge_badge_parent, String oculus_category, boolean oculus_ignore_missing_title) {
+    private static void sendInternalNotification(Context paramContext, String tag, int id, String paramString1, String paramString2, int paramInt2, int paramInt3, PendingIntent paramPendingIntent1, PendingIntent paramPendingIntent2, boolean vrshell_aui_persist, String vrshell_aui_badge_route, boolean vrshell_aui_badge_auto_dismiss, boolean vrshell_aui_badge_badge_parent, String oculus_category, boolean oculus_ignore_missing_title) {
 
         Bundle bundle = new Bundle();
         bundle.putBoolean("vrshell_aui_persist", vrshell_aui_persist);
@@ -28,11 +28,10 @@ public class QuestNotificationUtils {
 //        if (paramPendingIntent2 != null)
 //            builder.addAction(-1, "accept", paramPendingIntent2);
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(paramContext);
-        notificationManager.notify("tag", (int) System.currentTimeMillis(), builder.build());
+        notificationManager.notify(tag, id, builder.build());
     }
 
-    public static void sendNotification(Context paramContext, String title, String text) {
-        int id = (int) System.currentTimeMillis();
+    public static void sendNotification(Context paramContext, String tag, int id, String title, String text) {
         int priority = 2;
         boolean vrshell_aui_persist = true;
         String vrshell_aui_badge_route = null;
@@ -40,7 +39,6 @@ public class QuestNotificationUtils {
         boolean vrshell_aui_badge_badge_parent = true;
         String oculus_category = "";
         boolean oculus_ignore_missing_title = false;
-        String vrshell_test_notif_tag = null;
 
         Intent intent = new Intent("com.oculus.vrshell.intent.action.LAUNCH");
         intent.setPackage("com.oculus.vrshell");
@@ -52,6 +50,11 @@ public class QuestNotificationUtils {
         intent.putExtra("intent_data", (Parcelable)Uri.parse("systemux://browser"));
         intent.putExtra("uri", "");
         intent.putExtra("blackscreen", false);
-        sendInternalNotification(paramContext, title, text, vrshell_test_notif_tag, id, priority, R.drawable.ic_launcher_foreground, pendingIntent, PendingIntent.getBroadcast(paramContext, 989, intent, 0), vrshell_aui_persist, vrshell_aui_badge_route, vrshell_aui_badge_auto_dismiss, vrshell_aui_badge_badge_parent, oculus_category, oculus_ignore_missing_title);
+        sendInternalNotification(paramContext, tag, id, title, text, priority, R.drawable.ic_launcher_foreground, pendingIntent, PendingIntent.getBroadcast(paramContext, 989, intent, 0), vrshell_aui_persist, vrshell_aui_badge_route, vrshell_aui_badge_auto_dismiss, vrshell_aui_badge_badge_parent, oculus_category, oculus_ignore_missing_title);
+    }
+
+    public static void cancelNotification(Context context, String tag, int id) {
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
+        notificationManager.cancel(tag, id);
     }
 }

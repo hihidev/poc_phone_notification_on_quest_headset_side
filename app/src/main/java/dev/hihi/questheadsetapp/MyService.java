@@ -4,12 +4,16 @@ import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.Parcelable;
 import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.core.app.NotificationCompat;
 
 import org.json.JSONObject;
 
@@ -59,13 +63,33 @@ import java.util.Set;
                 case Constants.MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
-                    String readMessage = new String(readBuf, 0, msg.arg1);
+                    String readMessage = new String(readBuf, 2, msg.arg1);
                     Log.i(TAG, "readMessage: " + readMessage);
                     try {
                         JSONObject json = new JSONObject(readMessage);
-                        String title = json.getString("title");
-                        String text = json.getString("text");
-                        QuestNotificationUtils.sendNotification(MyService.this, title, "[" + title + "]" + text);
+                        String packageName = json.optString("package_name");
+                        String action = json.getString("action");
+                        String tag = packageName + ", " + json.optString("tag");
+                        int id = json.optInt("id");
+
+                        if ("post".equals(action)) {
+                            String title = json.getString("title");
+                            String text = json.getString("text");
+                            QuestNotificationUtils.sendNotification(MyService.this, tag, id, title,
+                                    "[" + title + "] " + text);
+                        } else if ("remove".equals(action)) {
+                            QuestNotificationUtils.cancelNotification(MyService.this, tag, id);
+                        } else if ("push_url".equals(action)) {
+                            String url = json.getString("url");
+                            Intent intent = new Intent("com.oculus.vrshell.intent.action.LAUNCH");
+                            intent.setPackage("com.oculus.vrshell");
+                            intent.putExtra("intent_data", (Parcelable) Uri.parse("systemux://browser"));
+                            intent.putExtra("uri", url);
+                            intent.putExtra("blackscreen", false);
+                            sendBroadcast(intent);
+                        } else {
+                            Log.i(TAG, "Unknown action: " + action);
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -107,6 +131,7 @@ import java.util.Set;
                 }
             }.start();
         }
+        startForeground(8964, new NotificationCompat.Builder(this, "NA").build());
     }
 
     private void tryConnectServer() {

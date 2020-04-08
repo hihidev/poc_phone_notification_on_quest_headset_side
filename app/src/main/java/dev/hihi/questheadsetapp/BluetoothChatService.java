@@ -26,6 +26,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -493,17 +495,42 @@ public class BluetoothChatService {
 
         public void run() {
             Log.i(TAG, "BEGIN mConnectedThread");
-            byte[] buffer = new byte[1024];
-            int bytes;
 
             // Keep listening to the InputStream while connected
             while (mState == STATE_CONNECTED) {
                 try {
-                    // Read from the InputStream
-                    bytes = mmInStream.read(buffer);
+                    byte[] buf = new byte[4096];
+
+                    int read;
+                    int read_total;
+                    while(true){
+                        read_total = 0;
+
+                        // Repeatedly perform reads until break or end of stream, offsetting at last read position in array
+                        while((read = mmInStream.read(buf, read_total, buf.length - read_total)) != -1){
+                            // Gets the amount read and adds it to a read_total variable.
+                            read_total = read_total + read;
+
+                            Log.i(TAG, "read vs total: " + read + ", " + read_total);
+
+                            // Break if it read_total is buffer length (128)
+                            if(read_total == buf.length){
+                                break;
+                            }
+                        }
+
+                        if(read_total != buf.length){
+                            // Incomplete read before 128 bytes
+                        }else{
+                            break;
+                        }
+                    }
+
+                    int bytes = (buf[0] & 0xFF) * 256 + (buf[1] & 0xFF);
+                    Log.e(TAG, "Received actual bytes: " + bytes);
 
                     // Send the obtained bytes to the UI Activity
-                    mHandler.obtainMessage(Constants.MESSAGE_READ, bytes, -1, buffer)
+                    mHandler.obtainMessage(Constants.MESSAGE_READ, bytes, -1, buf)
                             .sendToTarget();
                 } catch (IOException e) {
                     Log.e(TAG, "disconnected", e);
